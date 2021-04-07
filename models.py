@@ -1,6 +1,9 @@
 import questionary
 import rich
 from rich.console import Console
+import os.path
+import pathlib
+import requests
 class Questionary:
     def ask_for_text(self, question):
         answer = questionary.text(question).ask()
@@ -15,17 +18,87 @@ class Questionary:
         return answer
 
     def ask_selection_question(self, question, choices: list):
-        answer = questionary.select(question, choices=choices,).ask()
+        answer = questionary.select(question, choices=choices).ask()
         return answer
 
     def ask_checkbox_question(self, question, choices: list):
         answer = questionary.checkbox(question, choices=choices).ask()
         return answer
 
+class Auth:
+    
+    def __init__(self):
+        self.base_url = "127.0.0.1:1287"
+        self.login_request_url = f"{self.base_url}/api/login"
+        self.signup_request_url = f"{self.base_url}/api/signup"
+        self.signup_request_url = f"{self.base_url}/api/is_username_unique"
+
+    def is_user_logged_in(self):
+        if Files().does_it_exist(api_key_path):
+            return True
+        return False
+
+    def login_request(self, username, password):
+        login_request = requests.post(self.login_request_url, data={'username': username, 'password': password})
+        login_request_json = login_request.json()
+        if login_request.status_code == 200 and login_request_json["logged_in"] is True:
+            Files().write_api_key_text(login_request_json["api_key"])
+            return True
+
+        return False
+
+    def signup_request(self, username, password):
+        signup_request = requests.post(self.signup_request_url, data={'username': username, 'password': password})
+        signup_request_json = login_request.json()
+        if signup_request.status_code == 200 and signup_request_json["logged_in"] is True:
+            Files().write_api_key_text(signup_request_json["api_key"])
+            return True
+        return False
+
+    def is_username_unique(self, username):
+        request = requests.post(self.signup_request_url, data={'username': username})
+        request_json = login_request.json()
+        if request.status_code == 200 and request_json["is_it_unique"] is True:
+            return True
+        return False
+
+    def login_cli(self):
+        Rich().rich_print("📒 Alright, Alright, Alright. Let's Log-In to your account.")
+        username = Questionary().ask_for_text("👤 Please Enter Your Username: ")
+        password = Questionary().ask_for_password("🔑 Please Enter Your Password: ")
+        console = Console()   
+        with console.status("[bold green]Loggin in...") as status:
+            if Auth().login_request(username, password):
+                Rich().rich_print("🦄 Yoo hoo, You Are Logged-In Now.")
+                return True
+            else:
+                Rich().rich_print("😔 Awwww, Log-In Failed.")
+                return False
+
+    def signup_cli(self):
+        Rich().rich_print("📒 Alright, Alright, Alright. Let's Create an account for you.")
+        
+        username = Questionary().ask_for_text("👤 Please Enter Your Username: ")
+        while Auth().is_username_unique(username):
+            username = Questionary().ask_for_text(f"👤 '{username}' Is Already Taken, Please Enter Your Username: ")
+
+        password = Questionary().ask_for_password("🔑 Please Enter Your Password: ")
+        password_confirmation = Questionary().ask_for_password("🔑 Please Enter Your Password Again: ")
+        if password_confirmation != password:
+            Rich().rich_print("😮 Oh. The Passwords Are Not The Same, Quitting...")
+            return False
+        console = Console()   
+        with console.status("[bold green]Signing-Up...") as status:
+            if Auth().login_request(username, password):
+                Rich().rich_print("🦄 Yoo hoo, Your Account Is Created And You Are Logged-In Now.")
+            else:
+                Rich().rich_print("😔 Awwww, Sign-Up Failed.")
+
 
 class Rich:
-    def rich_print(self, text):
-        rich.print(text)
+    def rich_print(self, text, style="magenta"):
+        console = Console()
+        console.print(text, style=style)
 
 
     def table(self, columns:list, rows:list):
@@ -38,3 +111,27 @@ class Rich:
                 *row
             )
         console.print(table)
+
+
+class Files:
+    def write_api_key_text(self, key):
+        with open(api_key_path, "w") as file:
+            file.write(str(key))
+            file.close()
+        return True
+
+    def current_path(self):
+        return pathlib.Path(__file__).parent.absolute()
+
+    def does_it_exist(self, path):
+        return os.path.isfile(path)
+    
+    def read_file(self, path):
+        if Files().does_it_exist(path) is True:
+            file = open(path, "r")
+            return file.read()
+        return False
+
+
+
+api_key_path = f"{Files().current_path()}/.tracko_api_key"
