@@ -1,4 +1,5 @@
 questionary
 rich
-fire
+click
 prompt_toolkit
+requests
