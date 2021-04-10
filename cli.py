@@ -12,7 +12,7 @@ def setup(**kwargs):
         Rich().rich_print(":thumbs_up: Hip Hip Hooray, Everything Is Set Up!")
         return True
     answer = Questionary().ask_selection_question("🔎 Oh, You Are Not Logged In, You Want To ", ["Create A New Account.", "Log-in To My Account."])
-    if "log-in" in answer:
+    if "Log-in" in answer:
         return Auth().login_cli()
     else:
         return Auth().signup_cli()
