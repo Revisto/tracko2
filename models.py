@@ -28,10 +28,10 @@ class Questionary:
 class Auth:
     
     def __init__(self):
-        self.base_url = "127.0.0.1:1287"
+        self.base_url = "http://127.0.0.1:1287"
         self.login_request_url = f"{self.base_url}/api/login"
         self.signup_request_url = f"{self.base_url}/api/signup"
-        self.signup_request_url = f"{self.base_url}/api/is_username_unique"
+        self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
     def is_user_logged_in(self):
         if Files().does_it_exist(api_key_path):
@@ -49,15 +49,15 @@ class Auth:
 
     def signup_request(self, username, password):
         signup_request = requests.post(self.signup_request_url, data={'username': username, 'password': password})
-        signup_request_json = login_request.json()
+        signup_request_json = signup_request.json()
         if signup_request.status_code == 200 and signup_request_json["logged_in"] is True:
             Files().write_api_key_text(signup_request_json["api_key"])
             return True
         return False
 
     def is_username_unique(self, username):
-        request = requests.post(self.signup_request_url, data={'username': username})
-        request_json = login_request.json()
+        request = requests.post(self.is_username_unique_request_url, data={'username': username})
+        request_json = request.json()
         if request.status_code == 200 and request_json["is_it_unique"] is True:
             return True
         return False
@@ -79,7 +79,7 @@ class Auth:
         Rich().rich_print("📒 Alright, Alright, Alright. Let's Create an account for you.")
         
         username = Questionary().ask_for_text("👤 Please Enter Your Username: ")
-        while Auth().is_username_unique(username):
+        while Auth().is_username_unique(username) is False:
             username = Questionary().ask_for_text(f"👤 '{username}' Is Already Taken, Please Enter Your Username: ")
 
         password = Questionary().ask_for_password("🔑 Please Enter Your Password: ")
@@ -89,7 +89,7 @@ class Auth:
             return False
         console = Console()   
         with console.status("[bold green]Signing-Up...") as status:
-            if Auth().login_request(username, password):
+            if Auth().signup_request(username, password):
                 Rich().rich_print("🦄 Yoo hoo, Your Account Is Created And You Are Logged-In Now.")
             else:
                 Rich().rich_print("😔 Awwww, Sign-Up Failed.")
