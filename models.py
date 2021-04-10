@@ -4,6 +4,7 @@ from rich.console import Console
 import os.path
 import pathlib
 import requests
+from os import remove
 class Questionary:
     def ask_for_text(self, question):
         answer = questionary.text(question).ask()
@@ -131,6 +132,9 @@ class Files:
             file = open(path, "r")
             return file.read()
         return False
+
+    def remove_api_key(self):
+        remove(api_key_path)
 
 
 

@@ -17,5 +17,15 @@ def setup(**kwargs):
     else:
         return Auth().signup_cli()
 
+@main.command()
+def signout(**kwargs):
+    if Auth().is_user_logged_in():
+        Files().remove_api_key()
+        Rich().rich_print("🥺 You Now Logged-Out! Hope To See You Soon...")
+    else:
+        Rich().rich_print("😧 You Were Not Logged-In!")
+
+
+
 if __name__ == '__main__':
     main()
