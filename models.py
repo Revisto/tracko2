@@ -5,6 +5,17 @@ import os.path
 import pathlib
 import requests
 from os import remove
+import socket
+
+
+def is_internet_connected(func):
+    def is_internet_connected_(*args, **kwargs):
+        if General().is_internet_connected() is False:
+            Rich().rich_print("🌐 It Seems Like You're Not Connected To The Internet. Please Try Again Later...")
+            return False
+        return func(*args, **kwargs)
+    return is_internet_connected_
+
 class Questionary:
     def ask_for_text(self, question):
         answer = questionary.text(question).ask()
@@ -38,7 +49,8 @@ class Auth:
         if Files().does_it_exist(api_key_path):
             return True
         return False
-
+    
+    @is_internet_connected
     def login_request(self, username, password):
         login_request = requests.post(self.login_request_url, data={'username': username, 'password': password})
         login_request_json = login_request.json()
@@ -48,6 +60,7 @@ class Auth:
 
         return False
 
+    @is_internet_connected
     def signup_request(self, username, password):
         signup_request = requests.post(self.signup_request_url, data={'username': username, 'password': password})
         signup_request_json = signup_request.json()
@@ -56,6 +69,7 @@ class Auth:
             return True
         return False
 
+    @is_internet_connected
     def is_username_unique(self, username):
         request = requests.post(self.is_username_unique_request_url, data={'username': username})
         request_json = request.json()
@@ -63,6 +77,7 @@ class Auth:
             return True
         return False
 
+    @is_internet_connected
     def login_cli(self):
         Rich().rich_print("📒 Alright, Alright, Alright. Let's Log-In to your account.")
         username = Questionary().ask_for_text("👤 Please Enter Your Username: ")
@@ -76,6 +91,7 @@ class Auth:
                 Rich().rich_print("😔 Awwww, Log-In Failed.")
                 return False
 
+    @is_internet_connected
     def signup_cli(self):
         Rich().rich_print("📒 Alright, Alright, Alright. Let's Create an account for you.")
         
@@ -94,7 +110,6 @@ class Auth:
                 Rich().rich_print("🦄 Yoo hoo, Your Account Is Created And You Are Logged-In Now.")
             else:
                 Rich().rich_print("😔 Awwww, Sign-Up Failed.")
-
 
 class Rich:
     def rich_print(self, text, style="magenta"):
@@ -137,5 +152,13 @@ class Files:
         remove(api_key_path)
 
 
+class General:
+    def is_internet_connected(self):
+        try:
+            socket.create_connection(("1.1.1.1", 53))
+            return True
+        except OSError:
+            pass
+        return False
 
 api_key_path = f"{Files().current_path()}/.tracko_api_key"
