@@ -2,3 +2,4 @@
 tests.py
 __pycache__/models.cpython-38.pyc
 __pycache__/models.cpython-39.pyc
+.tracko_api_key
