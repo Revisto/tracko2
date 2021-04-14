@@ -25,6 +25,9 @@ def signout(**kwargs):
     else:
         Rich().rich_print("😧 You Were Not Logged-In!")
 
+@main.command()
+def all_shelves(**kwargs):
+    return CLI().all_shelves()
 
 
 if __name__ == '__main__':
