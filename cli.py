@@ -1,5 +1,5 @@
 import click
-from models import Files, Rich, Questionary, Auth, CLI
+from models import Files, Rich, Questionary, Auth, CLI, Requests
 
 @click.group()
 def main():
@@ -27,8 +27,22 @@ def signout(**kwargs):
 
 @main.command()
 def all_shelves(**kwargs):
-    return CLI().all_shelves()
+    return CLI().shelves()
 
+@main.command()
+def shelf(**kwargs):
+    shelf_names = []
+    request_response = Requests().get_all_shelves()
+    if request_response["status"] is True and request_response["unauthorized"] is False:
+        for shelf_name in request_response["shelves"]:
+            shelf_names.append(shelf_name)
+        selected_shelf = Questionary().ask_selection_question("Which Shelf?", shelf_names)
+        CLI().shelves(selected_shelf)
+        return True
+    if request_response["status"] is True and request_response["unauthorized"] is True:
+        Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
+        return True
+    Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
 
 if __name__ == '__main__':
     main()

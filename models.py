@@ -51,6 +51,7 @@ class Requests:
         self.login_request_url = f"{self.base_url}/api/login"
         self.signup_request_url = f"{self.base_url}/api/signup"
         self.shelves_request_url = f"{self.base_url}/api/user/shelves"
+        self.shelf_request_url = self.base_url + "/api/user/shelf/{}"
         self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
     @is_internet_connected
@@ -81,6 +82,15 @@ class Requests:
             return {"status": True, "unauthorized": True}
         return {"status": False, "unauthorized": True}
 
+    @is_internet_connected
+    def get_specific_shelf(self, shelf):
+        request = requests.post(self.shelf_request_url.format(shelf), data={'api_key': Files().read_api_key()})
+        request_json = request.json()
+        if request.status_code == 200:
+            return {"status": True, "unauthorized": False, "shelves": request_json}
+        if request.status_code == 401:
+            return {"status": True, "unauthorized": True}
+        return {"status": False, "unauthorized": True}
 
     @is_internet_connected
     def is_username_unique(self, username):
@@ -133,21 +143,22 @@ class CLI:
 
     @is_user_logged_in
     @is_internet_connected
-    def all_shelves(self):
+    def shelves(self, shelf_name=None):
         request_response = Requests().get_all_shelves()
         if request_response["status"] is True and request_response["unauthorized"] is False:
             columns = ["N", "Name", "Status", "Watched Till"]
             count = 1
-            for status in request_response["shelves"]:
-                rows = []
-                shelf = request_response["shelves"][status]
-                for series_name in shelf:
-                    watched_till = shelf[series_name]["watched-till"]
-                    watched_till = watched_till.split(":")
-                    watched_till = f"S{watched_till[0]} E{watched_till[1]}  {watched_till[2]}:{watched_till[3]}"
-                    rows.append([str(count), status, series_name, watched_till])
-                    count += 1
-                Rich().table(columns, rows)
+            shelves = request_response["shelves"]
+            if shelf_name is None:
+                for status in shelves:
+                    shelf_data = shelves[status]
+                    count = CLI().show_shelf_cli(shelf_data, status, columns, count)
+            else:
+                if shelf_name in shelves:
+                    CLI().show_shelf_cli(shelves[shelf_name], shelf_name, columns)
+                else:
+                    Rich.rich_print("Oh, The Selected Shelf Is Not Found :(")
+
             return True
         if request_response["status"] is True and request_response["unauthorized"] is True:
             Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
@@ -156,6 +167,17 @@ class CLI:
         Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
         return False
 
+    def show_shelf_cli(self, self_data, shelf_name, columns, start_count = 1):
+        rows = []
+        count = start_count
+        for series_name in self_data:
+            watched_till = self_data[series_name]["watched-till"]
+            watched_till = watched_till.split(":")
+            watched_till = f"S{watched_till[0]} E{watched_till[1]}  {watched_till[2]}:{watched_till[3]}"
+            rows.append([str(count), shelf_name, series_name, watched_till])
+            count += 1
+        Rich().table(columns, rows)
+        return count
 
 
 class Rich:
