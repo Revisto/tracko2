@@ -37,19 +37,14 @@ class Questionary:
         answer = questionary.checkbox(question, choices=choices).ask()
         return answer
 
-class Auth:
-    
+class Requests:
     def __init__(self):
         self.base_url = "http://127.0.0.1:1287"
         self.login_request_url = f"{self.base_url}/api/login"
         self.signup_request_url = f"{self.base_url}/api/signup"
         self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
-    def is_user_logged_in(self):
-        if Files().does_it_exist(api_key_path):
-            return True
-        return False
-    
+
     @is_internet_connected
     def login_request(self, username, password):
         login_request = requests.post(self.login_request_url, data={'username': username, 'password': password})
@@ -57,7 +52,6 @@ class Auth:
         if login_request.status_code == 200 and login_request_json["logged_in"] is True:
             Files().write_api_key_text(login_request_json["api_key"])
             return True
-
         return False
 
     @is_internet_connected
@@ -76,6 +70,13 @@ class Auth:
         if request.status_code == 200 and request_json["is_it_unique"] is True:
             return True
         return False
+class Auth:
+    def is_user_logged_in(self):
+        if Files().does_it_exist(api_key_path):
+            return True
+        return False
+
+class CLI:
 
     @is_internet_connected
     def login_cli(self):
@@ -84,7 +85,7 @@ class Auth:
         password = Questionary().ask_for_password("🔑 Please Enter Your Password: ")
         console = Console()   
         with console.status("[bold green]Loggin in...") as status:
-            if Auth().login_request(username, password):
+            if Requests().login_request(username, password):
                 Rich().rich_print("🦄 Yoo hoo, You Are Logged-In Now.")
                 return True
             else:
@@ -96,7 +97,7 @@ class Auth:
         Rich().rich_print("📒 Alright, Alright, Alright. Let's Create an account for you.")
         
         username = Questionary().ask_for_text("👤 Please Enter Your Username: ")
-        while Auth().is_username_unique(username) is False:
+        while Requests().is_username_unique(username) is False:
             username = Questionary().ask_for_text(f"👤 '{username}' Is Already Taken, Please Enter Your Username: ")
 
         password = Questionary().ask_for_password("🔑 Please Enter Your Password: ")
@@ -106,7 +107,7 @@ class Auth:
             return False
         console = Console()   
         with console.status("[bold green]Signing-Up...") as status:
-            if Auth().signup_request(username, password):
+            if Requests().signup_request(username, password):
                 Rich().rich_print("🦄 Yoo hoo, Your Account Is Created And You Are Logged-In Now.")
             else:
                 Rich().rich_print("😔 Awwww, Sign-Up Failed.")

@@ -1,5 +1,5 @@
 import click
-from models import Files, Rich, Questionary, Auth
+from models import Files, Rich, Questionary, Auth, CLI
 
 @click.group()
 def main():
@@ -13,9 +13,9 @@ def setup(**kwargs):
         return True
     answer = Questionary().ask_selection_question("🔎 Oh, You Are Not Logged In, You Want To ", ["Create A New Account.", "Log-in To My Account."])
     if "Log-in" in answer:
-        return Auth().login_cli()
+        return CLI().login_cli()
     else:
-        return Auth().signup_cli()
+        return CLI().signup_cli()
 
 @main.command()
 def signout(**kwargs):
