@@ -31,18 +31,9 @@ def all_shelves(**kwargs):
 
 @main.command()
 def shelf(**kwargs):
-    shelf_names = []
-    request_response = Requests().get_all_shelves()
-    if request_response["status"] is True and request_response["unauthorized"] is False:
-        for shelf_name in request_response["shelves"]:
-            shelf_names.append(shelf_name)
-        selected_shelf = Questionary().ask_selection_question("Which Shelf?", shelf_names)
+    selected_shelf = CLI().choose_a_shelf()
+    if selected_shelf is not False:
         CLI().shelves(selected_shelf)
-        return True
-    if request_response["status"] is True and request_response["unauthorized"] is True:
-        Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
-        return True
-    Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
 
 if __name__ == '__main__':
     main()

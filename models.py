@@ -99,6 +99,21 @@ class Requests:
         if request.status_code == 200 and request_json["is_it_unique"] is True:
             return True
         return False
+
+    @is_internet_connected
+    def get_shelves_names(self):
+        shelf_names = []
+        request_response = Requests().get_all_shelves()
+        if request_response["status"] is True and request_response["unauthorized"] is False:
+            for shelf_name in request_response["shelves"]:
+                shelf_names.append(shelf_name)
+            return shelf_names
+        if request_response["status"] is True and request_response["unauthorized"] is True:
+            Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
+            return False
+        Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
+        return False
+
 class Auth:
     def is_user_logged_in(self):
         if Files().does_it_exist(api_key_path):
@@ -179,6 +194,12 @@ class CLI:
         Rich().table(columns, rows)
         return count
 
+    def choose_a_shelf(self):
+        shelves_names = Requests().get_shelves_names()
+        if shelves_names is False:
+            return False
+        chosen_shelf = Questionary().ask_selection_question("Which Shelf?", shelves_names)
+        return chosen_shelf
 
 class Rich:
     def rich_print(self, text, style="magenta"):
