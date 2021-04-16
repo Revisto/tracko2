@@ -52,6 +52,7 @@ class Requests:
         self.signup_request_url = f"{self.base_url}/api/signup"
         self.shelves_request_url = f"{self.base_url}/api/user/shelves"
         self.shelf_request_url = self.base_url + "/api/user/shelf/{}"
+        self.add_series_to_shelf_url = f"{self.base_url}/api/user/add/series"
         self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
     @is_internet_connected
@@ -104,15 +105,21 @@ class Requests:
     def get_shelves_names(self):
         shelf_names = []
         request_response = Requests().get_all_shelves()
-        if request_response["status"] is True and request_response["unauthorized"] is False:
+        if CLI().analyze_request_response(request_response) is True:
             for shelf_name in request_response["shelves"]:
                 shelf_names.append(shelf_name)
             return shelf_names
-        if request_response["status"] is True and request_response["unauthorized"] is True:
-            Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
-            return False
-        Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
         return False
+
+    @is_internet_connected
+    def add_series_to_shelf(self, shelf_name, series_name):
+        request = requests.post(self.add_series_to_shelf_url, data={'api_key': Files().read_api_key(), 'series_name': series_name, "shelf_name":shelf_name})
+        request_json = request.json()
+        if request.status_code == 200:
+            return {"status": request_json["status"], "unauthorized": False}
+        if request.status_code == 401:
+            return {"status": True, "unauthorized": True}
+        return {"status": False, "unauthorized": True}
 
 class Auth:
     def is_user_logged_in(self):
@@ -121,6 +128,15 @@ class Auth:
         return False
 
 class CLI:
+
+    def analyze_request_response(self, request_response):
+        if request_response["status"] is True and request_response["unauthorized"] is False:
+            return True
+        if request_response["status"] is True and request_response["unauthorized"] is True:
+            Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
+            return False
+        Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
+        return False
 
     @is_internet_connected
     def login_cli(self):
@@ -160,7 +176,7 @@ class CLI:
     @is_internet_connected
     def shelves(self, shelf_name=None):
         request_response = Requests().get_all_shelves()
-        if request_response["status"] is True and request_response["unauthorized"] is False:
+        if CLI().analyze_request_response(request_response) is True:
             columns = ["N", "Name", "Status", "Watched Till"]
             count = 1
             shelves = request_response["shelves"]
@@ -173,13 +189,7 @@ class CLI:
                     CLI().show_shelf_cli(shelves[shelf_name], shelf_name, columns)
                 else:
                     Rich.rich_print("Oh, The Selected Shelf Is Not Found :(")
-
             return True
-        if request_response["status"] is True and request_response["unauthorized"] is True:
-            Rich().rich_print("🤺 Oh, It Seems Like Your Api-Key Is Not Valid, Try 'tracko signout' And Then 'tracko setup'")
-            return True
-        
-        Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
         return False
 
     def show_shelf_cli(self, self_data, shelf_name, columns, start_count = 1):
@@ -201,6 +211,15 @@ class CLI:
         chosen_shelf = Questionary().ask_selection_question("Which Shelf?", shelves_names)
         return chosen_shelf
 
+    def add_series_to_shelf(self):
+        selected_shelf = CLI().choose_a_shelf()
+        if selected_shelf is not False:
+            name = Questionary().ask_for_text("Name Of The Series: ")
+            request_answer = Requests().add_series_to_shelf(selected_shelf, name)
+            if request_answer is True:
+                Rich().rich_print("✨Successfully Added.")
+                return True
+            return False
 class Rich:
     def rich_print(self, text, style="magenta"):
         console = Console()

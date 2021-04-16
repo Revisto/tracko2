@@ -35,5 +35,11 @@ def shelf(**kwargs):
     if selected_shelf is not False:
         CLI().shelves(selected_shelf)
 
+@main.command()
+def add(**kwargs):
+    CLI().add_series_to_shelf()
+
+
+
 if __name__ == '__main__':
     main()
