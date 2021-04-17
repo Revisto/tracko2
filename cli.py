@@ -43,5 +43,9 @@ def add(**kwargs):
 def move(**kwargs):
     CLI().move_series()
 
+@main.command()
+def update(**kwargs):
+    CLI().update_series()
+
 if __name__ == '__main__':
     main()

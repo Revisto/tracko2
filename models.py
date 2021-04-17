@@ -6,7 +6,7 @@ import pathlib
 import requests
 from os import remove
 import socket
-
+from validator_collection import is_numeric
 
 def is_internet_connected(func):
     def is_internet_connected_(*args, **kwargs):
@@ -28,6 +28,20 @@ class Questionary:
     def ask_for_text(self, question):
         answer = questionary.text(question).ask()
         return answer
+
+    def ask_for_number(self, question):
+        answer = questionary.text(question).ask()
+        if is_numeric(answer) is True:
+            return answer
+        Rich().rich_print("🔢 The Input Is Not Numeric.")
+        return False
+
+    def ask_for_number_or_empty(self, question):
+        answer = questionary.text(question).ask()
+        if is_numeric(answer) is True or answer == "":
+            return answer
+        Rich().rich_print("🔢 The Input Is Not Numeric.")
+        return False
 
     def ask_for_password(self, question):
         answer = questionary.password(question).ask()
@@ -54,6 +68,7 @@ class Requests:
         self.shelf_request_url = self.base_url + "/api/user/shelf/{}"
         self.add_series_to_shelf_url = f"{self.base_url}/api/user/add/series"
         self.move_series_url = f"{self.base_url}/api/user/move/series"
+        self.update_series_url = f"{self.base_url}/api/user/update/series"
         self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
     @is_internet_connected
@@ -132,6 +147,16 @@ class Requests:
             return {"status": True, "unauthorized": True}
         return {"status": False, "unauthorized": True}
 
+    @is_internet_connected
+    def update_series(self, series_name, shelf_name, watched_till):
+        request = requests.post(self.update_series_url, data={'api_key': Files().read_api_key(), 'series_name': series_name, "shelf":shelf_name, "watched_till": watched_till})
+        request_json = request.json()
+        if request.status_code == 200:
+            return {"status": request_json["status"], "unauthorized": False}
+        if request.status_code == 401:
+            return {"status": True, "unauthorized": True}
+        return {"status": False, "unauthorized": True}
+
 class Features:
 
     @is_internet_connected
@@ -202,6 +227,27 @@ class CLI:
         request_response = Requests().move_series(chosen_series, chosen_shelf, to_shelf)
         if CLI().analyze_request_response(request_response) is True:
             Rich().rich_print("📦 Moved Successfully!")
+
+    @is_internet_connected
+    def update_series(self):
+        response = CLI().choose_a_series()
+        if response is False:
+            return False
+        chosen_series = response["chosen_series"]
+        chosen_shelf = response["chosen_shelf"]
+        
+        Rich().rich_print("ℹ️ If The Asked Value Is Not Changed, Just Press ENTER And Leave It Empty.")
+        answers = []
+        for question in ["📺 Season: ", "📺 Episode: ", "📺 Minute: ", "📺 Second: "]:
+            answer = Questionary().ask_for_number_or_empty(question)
+            if answer is False:
+                Rich().rich_print("​🚪 Quitting...")
+                return False
+            answers.append(answer)
+        watched_till = ":".join(answers)
+        request_response = Requests().update_series(chosen_series, chosen_shelf, watched_till)
+        if CLI().analyze_request_response(request_response) is True:
+            Rich().rich_print("📦 Updated Successfully!")
 
     @is_internet_connected
     def login_cli(self):
