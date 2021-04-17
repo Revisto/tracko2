@@ -39,7 +39,9 @@ def shelf(**kwargs):
 def add(**kwargs):
     CLI().add_series_to_shelf()
 
-
+@main.command()
+def move(**kwargs):
+    CLI().move_series()
 
 if __name__ == '__main__':
     main()

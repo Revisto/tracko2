@@ -19,7 +19,7 @@ def is_internet_connected(func):
 def is_user_logged_in(func):
     def is_user_logged_in_(*args, **kwargs):
         if Auth().is_user_logged_in() is False:
-            Rich().rich_print("😬Oh Shoot, It Seems That You Are‌ Not Logged In, Try 'tracko setup'")
+            Rich().rich_print("😬 Oh Shoot, It Seems That You Are‌ Not Logged In, Try 'tracko setup'")
             return False
         return func(*args, **kwargs)
     return is_user_logged_in_
@@ -53,6 +53,7 @@ class Requests:
         self.shelves_request_url = f"{self.base_url}/api/user/shelves"
         self.shelf_request_url = self.base_url + "/api/user/shelf/{}"
         self.add_series_to_shelf_url = f"{self.base_url}/api/user/add/series"
+        self.move_series_url = f"{self.base_url}/api/user/move/series"
         self.is_username_unique_request_url = f"{self.base_url}/api/is_username_unique"
 
     @is_internet_connected
@@ -121,6 +122,46 @@ class Requests:
             return {"status": True, "unauthorized": True}
         return {"status": False, "unauthorized": True}
 
+    @is_internet_connected
+    def move_series(self, series_name, from_shelf, to_shelf):
+        request = requests.post(self.move_series_url, data={'api_key': Files().read_api_key(), 'series_name': series_name, "from_shelf":from_shelf, "to_shelf": to_shelf})
+        request_json = request.json()
+        if request.status_code == 200:
+            return {"status": request_json["status"], "unauthorized": False}
+        if request.status_code == 401:
+            return {"status": True, "unauthorized": True}
+        return {"status": False, "unauthorized": True}
+
+class Features:
+
+    @is_internet_connected
+    def all_series_names(self):
+        request_response = Requests().get_all_shelves()
+        if CLI().analyze_request_response(request_response) is True:
+            all_shelves = request_response["shelves"]
+            all_series = list()
+            for status in all_shelves:
+                for series_name in all_shelves[status]:
+                    all_series.append(series_name)
+            return all_series
+        return False
+
+    @is_internet_connected
+    def series_names_of_a_shelf(self, shelf):
+        request_response = Requests().get_all_shelves()
+        if CLI().analyze_request_response(request_response) is True:
+            all_shelves = request_response["shelves"] 
+            if shelf not in all_shelves:
+                return False
+            all_series = list()
+            for series_name in all_shelves[shelf]:
+                all_series.append(series_name)
+            if all_series == []:
+                Rich().rich_print("❌ No Series Found In This Shelf.")
+                return False
+            return all_series
+        return False
+
 class Auth:
     def is_user_logged_in(self):
         if Files().does_it_exist(api_key_path):
@@ -137,6 +178,30 @@ class CLI:
             return False
         Rich().rich_print("🌐 Unknown Problem, Please Check Your Internet Connection.")
         return False
+    
+    @is_internet_connected
+    def choose_a_series(self):
+        series_names = Features().all_series_names()
+        if series_names is not False:
+            chosen_shelf = CLI().choose_a_shelf()
+            all_series_of_shelf = Features().series_names_of_a_shelf(chosen_shelf)
+            if all_series_of_shelf is False:
+                return False 
+            chosen_series = Questionary().ask_selection_question("🎥 Which Series?", all_series_of_shelf)
+            return {"chosen_series": chosen_series, "chosen_shelf": chosen_shelf}
+        return False
+
+    @is_internet_connected
+    def move_series(self):
+        response = CLI().choose_a_series()
+        if response is False:
+            return False
+        chosen_series = response["chosen_series"]
+        chosen_shelf = response["chosen_shelf"]
+        to_shelf = CLI().choose_a_shelf("📚 Move To Which Shelf?")
+        request_response = Requests().move_series(chosen_series, chosen_shelf, to_shelf)
+        if CLI().analyze_request_response(request_response) is True:
+            Rich().rich_print("📦 Moved Successfully!")
 
     @is_internet_connected
     def login_cli(self):
@@ -188,7 +253,7 @@ class CLI:
                 if shelf_name in shelves:
                     CLI().show_shelf_cli(shelves[shelf_name], shelf_name, columns)
                 else:
-                    Rich.rich_print("Oh, The Selected Shelf Is Not Found :(")
+                    Rich.rich_print("🥺 Oh, The Selected Shelf Is Not Found :(")
             return True
         return False
 
@@ -204,20 +269,20 @@ class CLI:
         Rich().table(columns, rows)
         return count
 
-    def choose_a_shelf(self):
+    def choose_a_shelf(self, question="📒 Which Shelf?"):
         shelves_names = Requests().get_shelves_names()
         if shelves_names is False:
             return False
-        chosen_shelf = Questionary().ask_selection_question("Which Shelf?", shelves_names)
+        chosen_shelf = Questionary().ask_selection_question(question, shelves_names)
         return chosen_shelf
 
     def add_series_to_shelf(self):
         selected_shelf = CLI().choose_a_shelf()
         if selected_shelf is not False:
-            name = Questionary().ask_for_text("Name Of The Series: ")
+            name = Questionary().ask_for_text("🎥 Name Of The Series: ")
             request_answer = Requests().add_series_to_shelf(selected_shelf, name)
             if request_answer is True:
-                Rich().rich_print("✨Successfully Added.")
+                Rich().rich_print("✨ Successfully Added.")
                 return True
             return False
 class Rich:
