@@ -199,7 +199,7 @@ class CLI:
             watched_till = self_data[series_name]["watched-till"]
             watched_till = watched_till.split(":")
             watched_till = f"S{watched_till[0]} E{watched_till[1]}  {watched_till[2]}:{watched_till[3]}"
-            rows.append([str(count), shelf_name, series_name, watched_till])
+            rows.append([str(count), series_name, shelf_name, watched_till])
             count += 1
         Rich().table(columns, rows)
         return count
