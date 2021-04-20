@@ -92,8 +92,8 @@ class Requests:
     @is_internet_connected
     def get_all_shelves(self):
         request = requests.post(self.shelves_request_url, data={'api_key': Files().read_api_key()})
-        request_json = request.json()
         if request.status_code == 200:
+            request_json = request.json()
             return {"status": True, "unauthorized": False, "shelves": request_json}
         if request.status_code == 401:
             return {"status": True, "unauthorized": True}
@@ -102,8 +102,8 @@ class Requests:
     @is_internet_connected
     def get_specific_shelf(self, shelf):
         request = requests.post(self.shelf_request_url.format(shelf), data={'api_key': Files().read_api_key()})
-        request_json = request.json()
         if request.status_code == 200:
+            request_json = request.json()
             return {"status": True, "unauthorized": False, "shelves": request_json}
         if request.status_code == 401:
             return {"status": True, "unauthorized": True}
@@ -205,6 +205,7 @@ class CLI:
         return False
     
     @is_internet_connected
+    @is_user_logged_in
     def choose_a_series(self):
         series_names = Features().all_series_names()
         if series_names is not False:
@@ -217,6 +218,7 @@ class CLI:
         return False
 
     @is_internet_connected
+    @is_user_logged_in
     def move_series(self):
         response = CLI().choose_a_series()
         if response is False:
@@ -229,6 +231,7 @@ class CLI:
             Rich().rich_print("📦 Moved Successfully!")
 
     @is_internet_connected
+    @is_user_logged_in
     def update_series(self):
         response = CLI().choose_a_series()
         if response is False:
@@ -283,8 +286,8 @@ class CLI:
             else:
                 Rich().rich_print("😔 Awwww, Sign-Up Failed.")
 
-    @is_user_logged_in
     @is_internet_connected
+    @is_user_logged_in
     def shelves(self, shelf_name=None):
         request_response = Requests().get_all_shelves()
         if CLI().analyze_request_response(request_response) is True:
@@ -303,6 +306,7 @@ class CLI:
             return True
         return False
 
+    @is_user_logged_in
     def show_shelf_cli(self, self_data, shelf_name, columns, start_count = 1):
         rows = []
         count = start_count
@@ -315,6 +319,7 @@ class CLI:
         Rich().table(columns, rows)
         return count
 
+    @is_user_logged_in
     def choose_a_shelf(self, question="📒 Which Shelf?"):
         shelves_names = Requests().get_shelves_names()
         if shelves_names is False:
@@ -322,6 +327,7 @@ class CLI:
         chosen_shelf = Questionary().ask_selection_question(question, shelves_names)
         return chosen_shelf
 
+    @is_user_logged_in
     def add_series_to_shelf(self):
         selected_shelf = CLI().choose_a_shelf()
         if selected_shelf is not False:
