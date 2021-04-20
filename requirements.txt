@@ -3,4 +3,4 @@ rich
 click
 prompt_toolkit
 requests
-vallidator-collection
+validator-collection
