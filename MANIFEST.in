@@ -1,0 +1,13 @@
+graft docs
+graft src
+
+include .bumpversion.cfg
+include .coveragerc
+include .cookiecutterrc
+include .editorconfig
+
+include AUTHORS.rst
+include LICENSE
+include README.md
+
+global-exclude *.py[cod] __pycache__/* *.so *.dylib
