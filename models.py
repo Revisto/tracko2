@@ -61,7 +61,7 @@ class Questionary:
 
 class Requests:
     def __init__(self):
-        self.base_url = "http://127.0.0.1:1287"
+        self.base_url = "https://tracko.ir"
         self.login_request_url = f"{self.base_url}/api/login"
         self.signup_request_url = f"{self.base_url}/api/signup"
         self.shelves_request_url = f"{self.base_url}/api/user/shelves"
