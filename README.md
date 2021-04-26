@@ -3,6 +3,7 @@
 
 Tracko is an application that you can track the time of the series you've watched till.
 
+![](https://revisto.ir/static/projects-cover/tracko.jpg)
 
 ## ⚙️ Installation
 
